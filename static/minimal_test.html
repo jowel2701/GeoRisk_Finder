@@ -27,7 +27,10 @@ const d = new deck.Deck({
   layers: [
     new deck.ScatterplotLayer({
       id: 'test',
-      data: [{position: [0, 0], color: [255, 0, 0, 255], radius: 500000}],
+      data: [
+        {position: [0, 0], color: [255, 0, 0, 255], radius: 500000},
+        {position: [30, 30], color: [0, 212, 255, 255], radius: 300000},
+      ],
       getPosition: (d) => d.position,
       getFillColor: (d) => d.color,
       getRadius: (d) => d.radius,
