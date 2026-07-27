@@ -17,6 +17,7 @@ notebooks/.ipynb_checkpoints/
 models/
 *.html
 !georisk_globe/frontend/index.html
+!georisk_globe/message_sender/frontend/index.html
 profiling_reports/
 streamlit_*.log
 _check_*.py
