@@ -22,3 +22,5 @@ streamlit_*.log
 _check_*.py
 mlflow.db
 mlruns/
+mlartifacts/
+*.sqlite
