@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>deck.gl minimal test</title>
+<style>
+html,body,#map{width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#0b0f19}
+canvas{display:block}
+</style>
+</head><body><div id="map"></div>
+
+<script src="https://unpkg.com/deck.gl@8.9.35/dist.min.js"></script>
+<script>
+"use strict";
+const map = document.getElementById('map');
+
+console.log('deck.Deck:', typeof deck.Deck);
+console.log('deck._GlobeView:', typeof deck._GlobeView);
+console.log('deck.ScatterplotLayer:', typeof deck.ScatterplotLayer);
+
+const d = new deck.Deck({
+  parent: map,
+  views: new deck._GlobeView({id: 'globe'}),
+  initialViewState: {
+    latitude: 20,
+    longitude: 0,
+    zoom: 1,
+    bearing: 0
+  },
+  layers: [
+    new deck.ScatterplotLayer({
+      id: 'test',
+      data: [{position: [0, 0], color: [255, 0, 0, 255], radius: 500000}],
+      getPosition: (d) => d.position,
+      getFillColor: (d) => d.color,
+      getRadius: (d) => d.radius,
+      radiusMinPixels: 5,
+      radiusMaxPixels: 100,
+      opacity: 1,
+      pickable: false,
+    })
+  ],
+  controller: true,
+  style: {background: '#0b0f19'},
+  parameters: {
+    clearColor: [0.043, 0.058, 0.098, 1]
+  },
+  onError: (err) => console.error('deck error:', err),
+});
+
+console.log('deck instance created');
+setTimeout(() => {
+  console.log('canvas:', document.querySelector('canvas') ? 'exists' : 'missing');
+  console.log('deck loaded:', d.isLoaded);
+}, 2000);
+</script></body></html>
