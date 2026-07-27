@@ -8,6 +8,7 @@ import georisk_globe
 
 from georisk_globe.layer_panel import layer_panel as layer_panel_component
 from georisk_globe.click_reader import click_reader
+from georisk_globe.message_sender import message_sender
 
 st.set_page_config(page_title="GeoRisk Finder", page_icon="\U0001f30d", layout="wide", initial_sidebar_state="collapsed")
 
@@ -176,53 +177,17 @@ def serialize_active_layers(lyr, h3_df, quake_df, cyclone_df, volcano_df, heat_d
 
 active_layers = serialize_active_layers(st.session_state.lyr, h3_df, quake_df, cyclone_df, volcano_df, heat_df)
 
-# ---- SEND DATA TO GLOBE VIA postMessage ----
+# ---- SEND DATA TO GLOBE VIA message_sender COMPONENT ----
 def push_to_globe(layers_json, view_state):
     print("[Python] push_to_globe called")
     n_layers = len(layers_json)
     print("[Python] layers:", n_layers)
     print("[Python] view_state:", view_state)
-    vs_json = json.dumps(view_state)
-    lj_json = json.dumps(layers_json)
-    print("[Python] payload bytes:", len(lj_json))
-    print("[Python] vs_json length:", len(vs_json))
-    script = f"""
-    <script>
-    console.log("[APP SCRIPT EXECUTED]");
-    (function() {{
-        const iframe = document.getElementById('georisk-globe-iframe');
-        console.log("[App] iframe element:", iframe);
-        if (!iframe) {{ console.warn("[App] iframe not found"); return; }}
-        const send = () => {{
-            console.log("[App] Sending layers ({n_layers} items)...");
-            console.log("[App] Sending viewstate", {vs_json});
-            if (iframe.contentWindow) {{
-                console.log("[App] iframe.contentWindow exists");
-                iframe.contentWindow.postMessage(
-                    {{type:'georisk_layers', layers: {lj_json}}}, '*'
-                );
-                iframe.contentWindow.postMessage(
-                    {{type:'georisk_viewstate', view_state: {vs_json}}}, '*'
-                );
-                console.log("[App] postMessage sent");
-            }} else {{
-                console.error("[App] iframe.contentWindow is null!");
-            }}
-        }};
-        if (iframe.contentDocument && iframe.contentDocument.readyState === 'complete') {{
-            console.log("[App] iframe ready, sending immediately");
-            send();
-        }} else {{
-            console.log("[App] iframe not ready, waiting for load event");
-            iframe.addEventListener('load', send);
-        }}
-    }})();
-    </script>
-    """
-    print("[Python] script length:", len(script))
-    print("[Python] script[:300]:", script[:300])
-    print("[Python] injecting postMessage script")
-    st.markdown(script, unsafe_allow_html=True)
+    print("[Python] payload bytes:", len(json.dumps(layers_json)))
+    print("[Sender] layers:", n_layers)
+    print("[Sender] bytes:", len(json.dumps(layers_json)))
+    print("[Sender] view_state sent")
+    message_sender(layers=layers_json, view_state=view_state)
 
 push_to_globe(active_layers, st.session_state.vs)
 
