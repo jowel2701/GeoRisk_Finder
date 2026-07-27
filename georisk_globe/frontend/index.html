@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script src="https://cdn.jsdelivr.net/npm/h3-js@4.1.0/dist/h3-js.min.js"></script>
+<script src="./deck.gl.min.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0B0F19; }
+  #container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+</style>
+</head>
+<body>
+<div id="container"></div>
+<script>
+console.log("[Globe] iframe loaded");
+(function() {
+  var deckInstance = null;
+
+  function buildBasemap() {
+    return new deck.TileLayer({
+      id: 'basemap',
+      data: 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+      minZoom: 0,
+      maxZoom: 19,
+      tileSize: 256,
+      renderSubLayers: function(props) {
+        var bbox = props.tile.bbox;
+        return new deck.BitmapLayer(props, {
+          data: null,
+          image: props.data,
+          bounds: [bbox.west, bbox.south, bbox.east, bbox.north],
+        });
+      },
+    });
+  }
+
+  function buildDataLayers(specs) {
+    var layers = [];
+    (specs || []).forEach(function(spec) {
+      console.log("[FASE2] Construyendo spec:", JSON.stringify({type:spec.type, id:spec.id, data_len:spec.data?spec.data.length:0}));
+      var LayerClass = deck[spec.type];
+      if (!LayerClass) { console.warn("[FASE2] deck."+spec.type+" not found!"); return; }
+      var layer = new LayerClass(Object.assign({}, spec.props || {}, {
+        id: spec.id,
+        data: spec.data,
+        pickable: spec.pickable !== false,
+      }));
+      console.log("[FASE2] Layer creada:", spec.id, layer.constructor.name, "data length:", spec.data ? spec.data.length : 0);
+      layers.push(layer);
+    });
+    console.log("[FASE2] Total capas construidas:", layers.length);
+    return layers;
+  }
+
+  function buildViewState(vs) {
+    vs = vs || {};
+    return {
+      latitude: vs.latitude || 15,
+      longitude: vs.longitude || 0,
+      zoom: vs.zoom || 1.5,
+      pitch: vs.pitch || 0,
+      bearing: vs.bearing || 0,
+      minZoom: 0.5,
+      maxZoom: 10,
+    };
+  }
+
+  function initDeck(vs) {
+    console.log("[Globe] initDeck called with", JSON.stringify(vs));
+    deckInstance = new deck.Deck({
+      container: 'container',
+      views: [new deck._GlobeView({ id: 'globe', resolution: 20 })],
+      initialViewState: buildViewState(vs),
+      controller: true,
+      layers: [buildBasemap()],
+      onClick: function(info) {
+        if (!info.object) return;
+        var r = {};
+        Object.keys(info.object).forEach(function(k) { r[k] = info.object[k]; });
+        if (info.coordinate) { r._click_lat = info.coordinate[1]; r._click_lon = info.coordinate[0]; }
+        try { sessionStorage.setItem('georisk_click', JSON.stringify(r)); }
+        catch (e) { console.error('[Globe] sessionStorage error:', e); }
+      },
+    });
+    console.log("[Globe] deckInstance created", deckInstance ? "OK" : "NULL");
+  }
+
+  function setLayers(specs) {
+    console.log("[FASE1] setLayers called with", specs ? specs.length : 0, "specs");
+    console.log("[FASE1] specs:", specs);
+    if (!specs) { console.error("[FASE1] specs is null/undefined!"); return; }
+    if (!Array.isArray(specs)) { console.error("[FASE1] specs is not an array:", typeof specs); return; }
+    specs.forEach(function(s, i) {
+      console.log("[FASE1] spec["+i+"] type:", s.type, "id:", s.id, "data.length:", s.data ? s.data.length : 0);
+      if (!s.data || s.data.length === 0) console.warn("[FASE1] spec["+i+"] data vacio!");
+      /* FASE6: validacion de coordenadas */
+      if (s.data && s.data.length > 0) {
+        var first = s.data[0];
+        console.log("[FASE6] spec["+i+"] primer item keys:", Object.keys(first));
+        if (first.position) {
+          console.log("[FASE6] position sample:", first.position, "lon:", first.position[0], "lat:", first.position[1]);
+          var badCoords = s.data.filter(function(d) { 
+            return d.position && (Math.abs(d.position[0]) > 180 || Math.abs(d.position[1]) > 90);
+          });
+          if (badCoords.length > 0) console.warn("[FASE6] spec["+i+"]", badCoords.length, "coordenadas invalidas");
+        }
+        if (first.path) {
+          console.log("[FASE6] path sample length:", first.path.length, "first point:", first.path[0]);
+        }
+        if (first.h3_index) {
+          console.log("[FASE6] h3 sample:", first.h3_index);
+        }
+        if (first.lat !== undefined && first.lon !== undefined) {
+          console.log("[FASE6] lat/lon sample:", first.lat, first.lon);
+          var badCoords = s.data.filter(function(d) { 
+            return Math.abs(d.lon) > 180 || Math.abs(d.lat) > 90;
+          });
+          if (badCoords.length > 0) console.warn("[FASE6] spec["+i+"]", badCoords.length, "coordenadas invalidas");
+        }
+      }
+    });
+    if (!deckInstance) { console.warn("[Globe] deckInstance null, cannot set layers"); return; }
+    try {
+      var built = buildDataLayers(specs || []);
+      console.log("[FASE3] deckLayers a pasar a setProps:", built.length);
+      console.log("[FASE3] deckLayers:", built.map(function(l){return {id:l.id,type:l.constructor.name}}));
+      var finalLayers = [buildBasemap()].concat(built);
+      console.log("[FASE3] finalLayers total:", finalLayers.length);
+      deckInstance.setProps({
+        layers: finalLayers,
+      });
+      console.log("[FASE4] setProps ejecutado. deckInstance.props.layers:", deckInstance.props ? deckInstance.props.layers : "NO PROPS");
+      if (deckInstance && deckInstance.props && deckInstance.props.layers) {
+        console.log("[FASE4] deck tiene", deckInstance.props.layers.length, "capas:");
+        deckInstance.props.layers.forEach(function(l, idx) {
+          console.log("[FASE4] capa["+idx+"]", l.id, l.constructor.name, "data:", l.props && l.props.data ? l.props.data.length+" items" : "NO DATA");
+        });
+      }
+    } catch(e) {
+      console.error("[Globe] setLayers failed", e);
+    }
+  }
+
+  function setViewState(vs) {
+    if (!deckInstance) return;
+    var target = buildViewState(vs || {});
+    target.transitionDuration = 1200;
+    target.transitionInterpolator = new deck.FlyToInterpolator();
+    deckInstance.setProps({ viewState: target });
+  }
+
+  console.log("[Globe] waiting for messages");
+  window.addEventListener('message', function(e) {
+    console.log("[Globe] MESSAGE RECEIVED", e.data && e.data.type);
+    if (!e.data) return;
+    if (e.data.type === 'georisk_layers') {
+      console.log("[Globe] layers:", e.data.layers.length);
+      setLayers(e.data.layers);
+    }
+    if (e.data.type === 'georisk_viewstate') {
+      console.log("[Globe] => calling setViewState with", e.data.view_state);
+      setViewState(e.data.view_state);
+    }
+  });
+
+  function waitForDeck() {
+    if (window.deck && window.deck.Deck) {
+      console.log("[Globe] deck.gl ready, calling initDeck");
+      initDeck({ latitude: 15, longitude: 0, zoom: 1.5 });
+    } else {
+      console.log("[Globe] waiting for deck.gl...");
+      setTimeout(waitForDeck, 100);
+    }
+  }
+  waitForDeck();
+})();
+</script>
+</body>
+</html>
