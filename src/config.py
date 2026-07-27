@@ -38,3 +38,9 @@ PREPROCESSING_CONFIG = {
     "random_state": 42,
     "h3_resolution": 3,
 }
+
+MLFLOW_CONFIG = {
+    "tracking_uri": "sqlite:///mlflow.db",
+    "experiment_name": "georisk_preprocessing",
+    "run_name": "pca_pipeline",
+}

@@ -20,3 +20,5 @@ models/
 profiling_reports/
 streamlit_*.log
 _check_*.py
+mlflow.db
+mlruns/

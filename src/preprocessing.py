@@ -8,6 +8,7 @@ import os
 import warnings
 
 import joblib
+import mlflow
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -16,7 +17,7 @@ from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-from .config import PREPROCESSING_CONFIG
+from .config import MLFLOW_CONFIG, PREPROCESSING_CONFIG
 
 
 def detect_skew_columns(df: pd.DataFrame, threshold: float = 0.75) -> list:
@@ -103,6 +104,10 @@ def preprocessing_pca_pipeline(
         (df_pca, pipeline, df_scaled)
     """
     config = PREPROCESSING_CONFIG
+    mlflow_cfg = MLFLOW_CONFIG
+    mlflow.set_tracking_uri(mlflow_cfg["tracking_uri"])
+    mlflow.set_experiment(mlflow_cfg["experiment_name"])
+
     exclude = set(config["exclude_columns"])
     numeric_cols = [
         c for c in df_raw.select_dtypes(include=[np.number]).columns if c not in exclude
@@ -139,41 +144,72 @@ def preprocessing_pca_pipeline(
             X_prep[numeric_for_median].median()
         )
 
-    pipeline.fit(X_prep)
+    with mlflow.start_run(run_name=mlflow_cfg["run_name"]) as run:
+        mlflow.log_params({
+            "h3_resolution": config["h3_resolution"],
+            "target_variance": target_variance,
+            "random_state": config["random_state"],
+            "n_features_input": X_prep.shape[1],
+            "n_samples": X_prep.shape[0],
+            "skew_threshold": 0.75,
+        })
 
-    pca = pipeline.named_steps["pca"]
-    cum_var = np.cumsum(pca.explained_variance_ratio_)
+        pipeline.fit(X_prep)
 
-    n_keep = int(np.searchsorted(cum_var, target_variance) + 1)
+        pca = pipeline.named_steps["pca"]
+        cum_var = np.cumsum(pca.explained_variance_ratio_)
 
-    pipeline.set_params(pca__n_components=n_keep)
-    pipeline.fit(X_prep)
+        n_keep = int(np.searchsorted(cum_var, target_variance) + 1)
 
-    X_full = pipeline.transform(X_prep)
-    df_pca = pd.DataFrame(
-        X_full,
-        columns=[f"PC{i + 1}" for i in range(n_keep)],
-        index=df_raw.index,
-    )
+        pipeline.set_params(pca__n_components=n_keep)
+        pipeline.fit(X_prep)
 
-    X_after_log = pipeline.named_steps["log_skew"].transform(X_prep)
-    X_after_dummies = pipeline.named_steps["onehot"].transform(X_after_log)
-    X_scaled = pipeline.named_steps["scaler"].transform(X_after_dummies)
+        pca = pipeline.named_steps["pca"]
+        cum_var = np.cumsum(pca.explained_variance_ratio_)
 
-    try:
-        scaled_names = pipeline.named_steps["scaler"].get_feature_names_out()
-    except Exception:
-        scaled_names = [f"V{i}" for i in range(X_scaled.shape[1])]
+        mlflow.log_metrics({
+            "explained_variance": cum_var[n_keep - 1],
+            "n_components": n_keep,
+            "n_components_initial": len(cum_var),
+        })
 
-    df_scaled = pd.DataFrame(
-        X_scaled,
-        columns=scaled_names,
-        index=df_raw.index,
-    )
+        mlflow.sklearn.log_model(
+            pipeline,
+            "pipeline_riesgo",
+            skops_trusted_types=[
+                "numpy.number",
+                "sklearn.compose._column_transformer.make_column_selector",
+                "src.preprocessing.SkewLogTransformer",
+                "src.preprocessing.OneHotTransformer",
+            ],
+        )
 
-    if save_path:
-        os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
-        joblib.dump(pipeline, save_path, compress=3)
+        X_full = pipeline.transform(X_prep)
+        df_pca = pd.DataFrame(
+            X_full,
+            columns=[f"PC{i + 1}" for i in range(n_keep)],
+            index=df_raw.index,
+        )
+
+        X_after_log = pipeline.named_steps["log_skew"].transform(X_prep)
+        X_after_dummies = pipeline.named_steps["onehot"].transform(X_after_log)
+        X_scaled = pipeline.named_steps["scaler"].transform(X_after_dummies)
+
+        try:
+            scaled_names = pipeline.named_steps["scaler"].get_feature_names_out()
+        except Exception:
+            scaled_names = [f"V{i}" for i in range(X_scaled.shape[1])]
+
+        df_scaled = pd.DataFrame(
+            X_scaled,
+            columns=scaled_names,
+            index=df_raw.index,
+        )
+
+        if save_path:
+            os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
+            joblib.dump(pipeline, save_path, compress=3)
+            mlflow.log_artifact(save_path)
 
     return df_pca, pipeline, df_scaled
 

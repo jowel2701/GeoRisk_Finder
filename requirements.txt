@@ -14,3 +14,4 @@ folium
 ydata-profiling
 missingno
 pre-commit
+mlflow
