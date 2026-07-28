@@ -89,7 +89,7 @@ def serialize_active_layers():
     layers.append({
         "id": "h3", "type": "H3HexagonLayer",
         "data": h3_records, "pickable": True,
-        "props": {"getHexagon": "h3_index", "getFillColor": "color", "getElevation": 0, "elevationScale": 0, "extruded": False, "opacity": 0.7, "autoHighlight": True, "highlightColor": [0, 212, 255, 80], "lineWidthMinPixels": 0.3, "getLineColor": [42, 53, 80, 100]},
+        "props": {"getHexagon": "h3_index", "getFillColor": "color", "getElevation": 0, "elevationScale": 0, "extruded": False, "opacity": 0.7, "autoHighlight": False, "lineWidthMinPixels": 0.3, "getLineColor": [42, 53, 80, 100]},
     })
     if not quake_df.empty:
         layers.append({
