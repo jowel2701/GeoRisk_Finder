@@ -3,6 +3,85 @@ import { store } from './store';
 import { fetchLayers, searchLocation, fetchRanking } from './api';
 import { loadContinentPolygons, createBaseMapLayer, createDataLayers, createHeatmapLayer, createHotspotLabels } from './layers';
 
+const style = document.createElement('style');
+style.textContent = `
+  /* Escena 1: fade-in círculo punteado (0-0.4s) */
+  @keyframes scene1 {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  #geo-circle-1 { animation: scene1 0.4s ease-out forwards; }
+
+  /* Escena 2: nodos en secuencia (0.4-1.1s) */
+  @keyframes nodeAppear {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  
+  #geo-node-1 { animation: nodeAppear 150ms ease-out 0.4s forwards; }
+  #geo-node-2 { animation: nodeAppear 150ms ease-out 0.55s forwards; }
+  #geo-node-3 { animation: nodeAppear 150ms ease-out 0.7s forwards; }
+  #geo-node-4 { animation: nodeAppear 150ms ease-out 0.85s forwards; }
+
+  /* Escena 3: líneas dibujándose (1.1-1.8s) */
+  @keyframes drawLine {
+    from { stroke-dashoffset: 1; }
+    to { stroke-dashoffset: 0; }
+  }
+  
+  #geo-line-1, #geo-line-2, #geo-line-3, #geo-line-4 {
+    stroke-dasharray: 500;
+    stroke-dashoffset: 500;
+    animation: drawLine 400ms ease-out 1.1s forwards;
+  }
+
+  /* Escena 4: texto GeoRisk aparece (1.8-2.4s) */
+  @keyframes revealGeoRisk {
+    from { opacity: 0; transform: translateX(12px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  #geo-text-geo { 
+    opacity: 0;
+    animation: revealGeoRisk 300ms ease-out 1.8s forwards;
+  }
+
+  /* Escena 5: texto FINDER aparece (2.4-3.0s) */
+  @keyframes revealFinder {
+    from { 
+      opacity: 0; 
+      clip-path: inset(0 100% 0 0);
+    }
+    to { 
+      opacity: 1; 
+      clip-path: inset(0 0 0 0);
+    }
+  }
+  #geo-text-find { 
+    opacity: 0; 
+    clip-path: inset(0 100% 0 0); 
+    animation: revealFinder 300ms ease-out 2.4s forwards;
+    fill: #17c896;
+  }
+
+  /* Pulso opcional cada 8s (3.8s → 7.8s) */
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+  }
+  .pulse { animation: pulse 400ms ease-in-out 3.8s 3 forwards; }
+
+  .logo-container {
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+  }
+  
+  .logo-container:hover {
+    transform: scale(1.05);
+  }
+`;
+document.head.appendChild(style);
+
 const s = store.getState;
 const sub = store.subscribe;
 
@@ -331,7 +410,36 @@ function renderTopbar() {
   const total = totalRealEvents;
   topbarEl.innerHTML = `
     <div class="topbar-inner">
-      <div class="logo">GeoRisk Finder</div>
+      <div class="logo-container">
+        <div class="logo-svg-wrapper">
+          <div class="logo-svg">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 896 268">
+              <rect id="geo-bg" width="896" height="268" fill="#061533" style="opacity: 0;" />
+              <circle id="geo-circle-1" cx="125" cy="126" r="63" fill="none" 
+                      stroke="#2f436d" stroke-width="4" stroke-dasharray="8 8"/>
+              <line id="geo-line-1" x1="90" y1="98" x2="153" y2="90" stroke="#dfe7f7" 
+                    stroke-width="5" stroke-linecap="round"/>
+              <line id="geo-line-2" x1="90" y1="98" x2="105" y2="165" stroke="#dfe7f7" 
+                    stroke-width="5" stroke-linecap="round"/>
+              <line id="geo-line-3" x1="153" y1="90" x2="160" y2="155" stroke="#dfe7f7" 
+                    stroke-width="5" stroke-linecap="round"/>
+              <line id="geo-line-4" x1="105" y1="165" x2="160" y2="155" stroke="#dfe7f7" 
+                    stroke-width="5" stroke-linecap="round"/>
+              <circle id="geo-node-1" cx="90" cy="98" r="14" fill="#16c38a"/>
+              <circle id="geo-node-2" cx="153" cy="90" r="14" fill="#18b8e8"/>
+              <circle id="geo-node-3" cx="105" cy="165" r="14" fill="#16c38a"/>
+              <circle id="geo-node-4" cx="160" cy="155" r="20" fill="#ff5b5f"/>
+              <text id="geo-text-geo" x="255" y="140" font-family="Arial, Helvetica, sans-serif" 
+                    font-size="78" font-weight="700" fill="#f3f3f3" text-anchor="start"
+                    dominant-baseline="middle">GeoRisk</text>
+              <text id="geo-text-find" x="575" y="140" font-family="Arial, Helvetica, sans-serif" 
+                    font-size="78" font-weight="400" text-anchor="start" 
+                    dominant-baseline="middle">FINDER</text>
+            </svg>
+          </div>
+        </div>
+        <div class="app-title">Finder</div>
+      </div>
       <div class="search-wrapper">
         <div class="search-box">
           <input type="text" id="search-input" placeholder="Buscar ciudad, región..." value="${st.searchQuery}" autocomplete="off" />
