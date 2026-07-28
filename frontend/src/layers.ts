@@ -7,7 +7,7 @@ import {
   BitmapLayer,
 } from '@deck.gl/layers';
 import { H3HexagonLayer } from '@deck.gl/geo-layers';
-import { ScreenGridLayer } from '@deck.gl/aggregation-layers';
+import { ScreenGridLayer, HeatmapLayer } from '@deck.gl/aggregation-layers';
 import type { LayerDescriptor } from './api';
 
 function accessor(value: any): any {
@@ -24,6 +24,8 @@ const LAYER_MAP: Record<string, any> = {
   PolygonLayer,
   LineLayer,
   H3HexagonLayer,
+  HeatmapLayer,
+  ScreenGridLayer,
 };
 
 const EXTRUSION_LAYERS = new Set(['h3']);
@@ -118,7 +120,7 @@ export function createHotspotLabels(hotspots: any[]): TextLayer | null {
     getTextAnchor: 'start',
     getAlignmentBaseline: 'bottom',
     background: true,
-    backgroundColor: [0, 0, 0, 160],
+    getBackgroundColor: [0, 0, 0, 160],
     padding: [4, 6],
   });
 }
