@@ -841,7 +841,7 @@ function render() {
   if (!st.loading && loadingOverlay) {
     loadingOverlay.style.display = 'none';
   }
-  if (!st.loading && !document.getElementById('cover-screen')) {
+  if (st.loading && !document.getElementById('cover-screen')) {
     const cover = document.createElement('div');
     cover.id = 'cover-screen';
     cover.innerHTML = `
@@ -864,8 +864,13 @@ function render() {
     `;
     cover.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#061533;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity 0.8s ease;pointer-events:none';
     document.getElementById('app')?.appendChild(cover);
-    setTimeout(() => { cover.classList.add('hidden'); }, 3500);
-    setTimeout(() => { cover.remove(); }, 4500);
+  }
+  if (!st.loading) {
+    const cover = document.getElementById('cover-screen');
+    if (cover) {
+      cover.classList.add('hidden');
+      setTimeout(() => cover.remove(), 900);
+    }
   }
   renderTopbar();
   renderSidebar();
