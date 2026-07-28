@@ -357,14 +357,38 @@ class DataAdapters:
             "venezuela": {"lat": 6.4238, "lon": -66.5897, "zoom": 5},
             "espana": {"lat": 40.4637, "lon": -3.7492, "zoom": 4},
             "canary": {"lat": 28.2916, "lon": -16.6291, "zoom": 6},
+            "manila": {"lat": 14.5995, "lon": 120.9842, "zoom": 7},
+            "yakarta": {"lat": -6.2088, "lon": 106.8456, "zoom": 7},
+            "katmandu": {"lat": 27.7172, "lon": 85.3240, "zoom": 7},
+            "estambul": {"lat": 41.0082, "lon": 28.9784, "zoom": 7},
+            "napoles": {"lat": 40.8518, "lon": 14.2681, "zoom": 8},
+            "san francisco": {"lat": 37.7749, "lon": -122.4194, "zoom": 7},
+            "santiago": {"lat": -33.4489, "lon": -70.6693, "zoom": 7},
+            "caracas": {"lat": 10.4806, "lon": -66.9036, "zoom": 7},
+            "lima": {"lat": -12.0464, "lon": -77.0428, "zoom": 7},
+            "bogota": {"lat": 4.7110, "lon": -74.0721, "zoom": 7},
+            "port-au-prince": {"lat": 18.5944, "lon": -72.3074, "zoom": 7},
         }
         q = query.lower().strip()
         if q in cities:
-            return cities[q]
+            return self._snap_to_h3(cities[q])
         for name, coords in cities.items():
             if q in name:
-                return coords
+                return self._snap_to_h3(coords)
         return None
+
+    def _snap_to_h3(self, coords: dict) -> dict:
+        """Snaps a city coordinate to the nearest H3 cell from grid_features.csv."""
+        try:
+            h3_data = self.load_h3()
+            if h3_data.empty:
+                return coords
+            lat, lon = coords["lat"], coords["lon"]
+            h3_data["_dist"] = (h3_data["lat"] - lat) ** 2 + (h3_data["lon"] - lon) ** 2
+            nearest = h3_data.loc[h3_data["_dist"].idxmin()]
+            return {"lat": float(nearest["lat"]), "lon": float(nearest["lon"]), "zoom": coords.get("zoom", 6)}
+        except Exception:
+            return coords
 
     def load_ranking(self, limit: int = 10) -> list:
         h3_data = self.load_h3()

@@ -90,54 +90,47 @@ function updateFilteredLayers() {
 
 const EVENT_LAYERS = new Set(['earthquakes', 'cyclones', 'volcanoes']);
 
-const CURATED_CITIES: Record<string, { lat: number; lon: number; zoom: number; label: string }> = {
-  'tokio': { lat: 35.6762, lon: 139.6503, zoom: 5, label: 'Tokio, Japón' },
-  'japon': { lat: 36.2048, lon: 138.2529, zoom: 4, label: 'Japón' },
-  'yokohama': { lat: 35.4437, lon: 139.6380, zoom: 6, label: 'Yokohama, Japón' },
-  'manila': { lat: 14.5995, lon: 120.9842, zoom: 6, label: 'Manila, Filipinas' },
-  'filipinas': { lat: 12.8797, lon: 121.7740, zoom: 5, label: 'Filipinas' },
-  'yakarta': { lat: -6.2088, lon: 106.8456, zoom: 6, label: 'Yakarta, Indonesia' },
-  'indonesia': { lat: -0.7893, lon: 113.9213, zoom: 4, label: 'Indonesia' },
-  'santiago': { lat: -33.4489, lon: -70.6693, zoom: 6, label: 'Santiago, Chile' },
-  'chile': { lat: -35.6751, lon: -71.5430, zoom: 4, label: 'Chile' },
-  'lima': { lat: -12.0464, lon: -77.0428, zoom: 6, label: 'Lima, Perú' },
-  'peru': { lat: -9.1900, lon: -75.0152, zoom: 5, label: 'Perú' },
-  'ciudad de mexico': { lat: 19.4326, lon: -99.1332, zoom: 6, label: 'Ciudad de México' },
-  'mexico': { lat: 23.6345, lon: -102.5528, zoom: 4, label: 'México' },
-  'los angeles': { lat: 34.0522, lon: -118.2437, zoom: 6, label: 'Los Ángeles, EE.UU.' },
-  'san francisco': { lat: 37.7749, lon: -122.4194, zoom: 6, label: 'San Francisco, EE.UU.' },
-  'california': { lat: 36.7783, lon: -119.4179, zoom: 5, label: 'California, EE.UU.' },
-  'anchorage': { lat: 61.2181, lon: -149.9003, zoom: 6, label: 'Anchorage, Alaska' },
-  'alaska': { lat: 64.2008, lon: -149.4937, zoom: 4, label: 'Alaska, EE.UU.' },
-  'medellin': { lat: 6.2476, lon: -75.5658, zoom: 7, label: 'Medellín, Colombia' },
-  'bogota': { lat: 4.7110, lon: -74.0721, zoom: 7, label: 'Bogotá, Colombia' },
-  'colombia': { lat: 4.5709, lon: -74.2973, zoom: 5, label: 'Colombia' },
-  'caracas': { lat: 10.4806, lon: -66.9036, zoom: 7, label: 'Caracas, Venezuela' },
-  'venezuela': { lat: 6.4238, lon: -66.5897, zoom: 5, label: 'Venezuela' },
-  'napoles': { lat: 40.8518, lon: 14.2681, zoom: 7, label: 'Nápoles, Italia' },
-  'italia': { lat: 41.8719, lon: 12.5674, zoom: 5, label: 'Italia' },
-  'islandia': { lat: 64.9631, lon: -19.0208, zoom: 6, label: 'Islandia' },
-  'reykjavik': { lat: 64.1466, lon: -21.9426, zoom: 7, label: 'Reykjavik, Islandia' },
-  'nueva zelanda': { lat: -40.9006, lon: 174.8860, zoom: 5, label: 'Nueva Zelanda' },
-  'wellington': { lat: -41.2865, lon: 174.7762, zoom: 7, label: 'Wellington, Nueva Zelanda' },
-  'madrid': { lat: 40.4168, lon: -3.7038, zoom: 6, label: 'Madrid, España' },
-  'espana': { lat: 40.4637, lon: -3.7492, zoom: 5, label: 'España' },
-  'barcelona': { lat: 41.3874, lon: 2.1686, zoom: 7, label: 'Barcelona, España' },
-  'valencia': { lat: 39.4699, lon: -0.3763, zoom: 7, label: 'Valencia, España' },
-  'canarias': { lat: 28.2916, lon: -16.6291, zoom: 6, label: 'Islas Canarias, España' },
-  'la palma': { lat: 28.6835, lon: -17.7646, zoom: 8, label: 'La Palma, Canarias' },
-  'guatemala': { lat: 14.6349, lon: -90.5069, zoom: 7, label: 'Guatemala' },
-  'san salvador': { lat: 13.6929, lon: -89.2182, zoom: 7, label: 'San Salvador, El Salvador' },
-  'san jose': { lat: 9.9281, lon: -84.0907, zoom: 7, label: 'San José, Costa Rica' },
-  'costa rica': { lat: 9.7489, lon: -83.7534, zoom: 6, label: 'Costa Rica' },
-  'panama': { lat: 8.5379, lon: -80.7821, zoom: 6, label: 'Panamá' },
-  'puerto rico': { lat: 18.2208, lon: -66.5901, zoom: 7, label: 'Puerto Rico' },
-  'miami': { lat: 25.7617, lon: -80.1918, zoom: 7, label: 'Miami, EE.UU.' },
-  'nueva orleans': { lat: 29.9511, lon: -90.0715, zoom: 7, label: 'Nueva Orleans, EE.UU.' },
-  'hong kong': { lat: 22.3193, lon: 114.1694, zoom: 7, label: 'Hong Kong' },
-  'taipei': { lat: 25.0330, lon: 121.5654, zoom: 7, label: 'Taipéi, Taiwán' },
-  'port-au-prince': { lat: 18.5944, lon: -72.3074, zoom: 7, label: 'Puerto Príncipe, Haití' },
+const CURATED_CITIES: Record<string, { label: string }> = {
+  'madrid': { label: 'Madrid, España' },
+  'tokio': { label: 'Tokio, Japón' },
+  'japon': { label: 'Japón' },
+  'chile': { label: 'Chile' },
+  'indonesia': { label: 'Indonesia' },
+  'california': { label: 'California, EE.UU.' },
+  'valencia': { label: 'Valencia, España' },
+  'venezuela': { label: 'Venezuela' },
+  'espana': { label: 'España' },
+  'canarias': { label: 'Canarias, España' },
+  'manila': { label: 'Manila, Filipinas' },
+  'yakarta': { label: 'Yakarta, Indonesia' },
+  'katmandu': { label: 'Katmandú, Nepal' },
+  'estambul': { label: 'Estambul, Turquía' },
+  'napoles': { label: 'Nápoles, Italia' },
+  'san francisco': { label: 'San Francisco, EE.UU.' },
+  'santiago': { label: 'Santiago, Chile' },
+  'caracas': { label: 'Caracas, Venezuela' },
+  'lima': { label: 'Lima, Perú' },
+  'bogota': { label: 'Bogotá, Colombia' },
+  'port-au-prince': { label: 'Puerto Príncipe, Haití' },
+  'mexico': { label: 'México' },
+  'colombia': { label: 'Colombia' },
+  'peru': { label: 'Perú' },
+  'filipinas': { label: 'Filipinas' },
+  'nepal': { label: 'Nepal' },
 };
+
+function filterCities(query: string): { key: string; label: string }[] {
+  const q = query.toLowerCase().trim();
+  if (!q) return [];
+  const results: { key: string; label: string }[] = [];
+  for (const [key, v] of Object.entries(CURATED_CITIES)) {
+    if (key.includes(q) || v.label.toLowerCase().includes(q)) {
+      results.push({ key, label: v.label });
+      if (results.length >= 5) break;
+    }
+  }
+  return results;
+}
 
 function computeVisibleCount(): number {
   const layers = (deck.props.layers || []) as any[];
@@ -291,9 +284,12 @@ function renderTopbar() {
   topbarEl.innerHTML = `
     <div class="topbar-inner">
       <div class="logo">GeoRisk Finder</div>
-      <div class="search-box">
-        <input type="text" id="search-input" placeholder="Buscar ciudad, región..." value="${st.searchQuery}" />
-        <button id="search-btn">&#x1F50D;</button>
+      <div class="search-wrapper">
+        <div class="search-box">
+          <input type="text" id="search-input" placeholder="Buscar ciudad, región..." value="${st.searchQuery}" autocomplete="off" />
+          <button id="search-btn">&times;</button>
+        </div>
+        <div class="search-suggestions" id="search-suggestions"></div>
       </div>
       <div class="topbar-stats">
         <span>${visible.total.toLocaleString()} / ${total.total.toLocaleString()} eventos</span>
@@ -303,36 +299,48 @@ function renderTopbar() {
       </div>
     </div>
   `;
-  document.getElementById('search-input')?.addEventListener('input', (e: any) => {
-    store.getState().setSearchQuery(e.target.value);
+  const input = document.getElementById('search-input') as HTMLInputElement;
+  const suggestionsEl = document.getElementById('search-suggestions')!;
+  input?.addEventListener('input', (e: any) => {
+    const q = e.target.value;
+    store.getState().setSearchQuery(q);
+    const results = filterCities(q);
+    if (results.length) {
+      suggestionsEl.innerHTML = results.map((r, i) =>
+        `<div class="search-suggestion-item" data-key="${r.key}" data-idx="${i}">${r.label}<div class="search-suggestion-region">${r.key}</div></div>`
+      ).join('');
+      suggestionsEl.style.display = 'block';
+    } else {
+      suggestionsEl.style.display = 'none';
+    }
+  });
+  input?.addEventListener('keydown', (e: any) => {
+    if (e.key === 'Enter' && st.searchQuery) {
+      suggestionsEl.style.display = 'none';
+      handleSearch(st.searchQuery);
+    }
+    if (e.key === 'Escape') suggestionsEl.style.display = 'none';
+  });
+  input?.addEventListener('blur', () => {
+    setTimeout(() => { suggestionsEl.style.display = 'none'; }, 200);
+  });
+  suggestionsEl.addEventListener('click', (e: any) => {
+    const item = e.target.closest('.search-suggestion-item');
+    if (item) {
+      const key = item.dataset.key;
+      suggestionsEl.style.display = 'none';
+      if (input) input.value = key;
+      store.getState().setSearchQuery(key);
+      handleSearch(key);
+    }
   });
   document.getElementById('search-btn')?.addEventListener('click', () => {
-    if (st.searchQuery) handleSearch(st.searchQuery);
-  });
-  document.getElementById('search-input')?.addEventListener('keydown', (e: any) => {
-    if (e.key === 'Enter' && st.searchQuery) handleSearch(st.searchQuery);
+    suggestionsEl.style.display = 'none';
+    if (input) { input.value = ''; store.getState().setSearchQuery(''); }
   });
 }
 
 async function handleSearch(q: string) {
-  const key = q.toLowerCase().trim();
-  const curated = CURATED_CITIES[key];
-  if (curated) {
-    const vs = {
-      latitude: curated.lat,
-      longitude: curated.lon,
-      zoom: curated.zoom,
-      bearing: 0,
-      pitch: 0,
-      transitionDuration: 2000,
-      transitionInterpolator: new FlyToInterpolator(),
-    };
-    store.getState().setTransitioning(true);
-    store.getState().setViewState(vs as any);
-    deck.setProps({ viewState: vs as any });
-    setTimeout(() => store.getState().setTransitioning(false), 2500);
-    return;
-  }
   try {
     const res = await searchLocation(q);
     if (res.found && res.result) {
