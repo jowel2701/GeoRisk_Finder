@@ -88,7 +88,44 @@ function updateFilteredLayers() {
   deck.setProps({ layers: allLayers });
 }
 
-const EVENT_LAYERS = new Set(['earthquakes', 'cyclones', 'volcanoes']);
+const REGIONS: { name: string; w: number; e: number; s: number; n: number }[] = [
+  { name: 'Japón', w: 130, e: 146, s: 30, n: 46 },
+  { name: 'Filipinas', w: 116, e: 128, s: 4, n: 21 },
+  { name: 'Indonesia', w: 95, e: 142, s: -11, n: 6 },
+  { name: 'Chile', w: -76, e: -66, s: -56, n: -18 },
+  { name: 'Perú', w: -82, e: -68, s: -19, n: 0 },
+  { name: 'México', w: -118, e: -86, s: 14, n: 33 },
+  { name: 'Centroamérica', w: -93, e: -77, s: 7, n: 19 },
+  { name: 'California', w: -125, e: -114, s: 32, n: 42 },
+  { name: 'Alaska', w: -170, e: -130, s: 51, n: 72 },
+  { name: 'Anillo del Pacífico', w: 120, e: -70, s: -60, n: 60 },
+  { name: 'Caribe', w: -90, e: -60, s: 8, n: 28 },
+  { name: 'Mediterráneo', w: -10, e: 40, s: 30, n: 48 },
+  { name: 'Oriente Medio', w: 35, e: 60, s: 12, n: 42 },
+  { name: 'Himalaya', w: 72, e: 98, s: 26, n: 38 },
+  { name: 'Nueva Zelanda', w: 166, e: 179, s: -48, n: -34 },
+  { name: 'Islandia', w: -25, e: -15, s: 63, n: 67 },
+  { name: 'Rift de África Oriental', w: 29, e: 42, s: -20, n: 5 },
+  { name: 'India', w: 68, e: 98, s: 6, n: 36 },
+  { name: 'China', w: 73, e: 136, s: 18, n: 54 },
+  { name: 'Rusia', w: 30, e: 180, s: 45, n: 72 },
+  { name: 'Europa', w: -10, e: 40, s: 36, n: 60 },
+  { name: 'Sudamérica', w: -82, e: -34, s: -56, n: 12 },
+  { name: 'Norteamérica', w: -130, e: -60, s: 24, n: 50 },
+  { name: 'Australia', w: 112, e: 155, s: -44, n: -10 },
+  { name: 'África', w: -20, e: 52, s: -36, n: 38 },
+];
+
+function regionFromCoords(lat: number, lon: number): string {
+  for (const r of REGIONS) {
+    if (r.w <= r.e) {
+      if (r.w <= lon && lon <= r.e && r.s <= lat && lat <= r.n) return r.name;
+    } else {
+      if ((lon >= r.w || lon <= r.e) && r.s <= lat && lat <= r.n) return r.name;
+    }
+  }
+  return '—';
+}
 
 const CURATED_CITIES: Record<string, { label: string }> = {
   'madrid': { label: 'Madrid, España' },
@@ -245,6 +282,17 @@ async function loadData() {
     if (h3Raw.length) {
       const clusterLabels = computeClusterLabelsFromH3(h3Raw);
       store.getState().setClusterLabels(clusterLabels);
+      // PASO 5: logear CLUSTER_LABELS con medias
+      console.table(Object.entries(clusterLabels).map(([c, l]) => ({
+        cluster: c,
+        eq_mean: Math.round(l.eq * 100) / 100,
+        cyc_mean: Math.round(l.cyc * 100) / 100,
+        vol_mean: Math.round(l.vol * 100) / 100,
+        risk_mean: Math.round(l.risk * 10000) / 100,
+        count: l.count,
+        business: l.business,
+        humanitarian: l.humanitarian,
+      })));
     }
     updateFilteredLayers();
     if (res.view_state) {
@@ -398,7 +446,10 @@ function renderIntel() {
     const rs = o.risk_score || 0;
     const kmeans = o.kmeans_cluster;
     const clusterLbl = kmeans !== undefined && kmeans !== null ? st.clusterLabels[kmeans] : null;
+    const regionName = regionFromCoords(o.lat, o.lon);
     html += `
+      <div class="intel-section">Región</div>
+      <div class="intel-row"><span class="intel-lbl">Nombre</span><span class="intel-val">${regionName}</span></div>
       <div class="intel-score">
         <div class="intel-score-value" style="color:hsl(${Math.round((1 - rs) * 120)}, 80%, 55%)">${rs.toFixed(3)}</div>
         <div class="intel-score-label">Riesgo</div>
@@ -410,7 +461,7 @@ function renderIntel() {
       <div class="intel-row" style="flex-direction:column;gap:4px;padding:6px 0">
         <span style="font-size:12px;color:#00D4FF;font-weight:600">💼 Negocios</span>
         <span style="font-size:11px;color:#c8d0dc;line-height:1.4">${clusterLbl.business}</span>
-        <span style="font-size:12px;color:#F59E0B;font-weight:600;margin-top:4px">🛟 Humanitario</span>
+        <span style="font-size:floatsize:12px;color:#F59E0B;font-weight:600;margin-top:4px">🛟 Humanitario</span>
         <span style="font-size:11px;color:#c8d0dc;line-height:1.4">${clusterLbl.humanitarian}</span>
       </div>`;
     }
