@@ -504,7 +504,7 @@ function renderTopbar() {
   const st = s();
   const visible = computeVisibleCount();
   const total = totalRealEvents;
-  const mlflowActive = !document.querySelector('.mlflow-badge.disabled');
+  const mlflowActive = !st.sidebarOpen && !document.querySelector('.mlflow-badge.disabled');
   const mlflowExperiment = "georisk_modelado";
   topbarEl.innerHTML = `
     <div class="topbar-inner">
@@ -528,6 +528,16 @@ function renderTopbar() {
           </div>
         </div>
         <div class="app-title">Finder</div>
+      </div>
+      <div class="mlflow-status-container">
+        <a href="http://localhost:5001" target="_blank" class="mlflow-badge ${!st.mlflowEnabled ? 'disabled' : 'active'}">
+          <span class="mlflow-icon">🧠</span>
+          <span class="mlflow-text">MLflow: ${mlflowExperiment}</span>
+          <span class="mlflow-status ${!st.mlflowEnabled ? 'off' : 'on'}">${!st.mlflowEnabled ? '⏸️' : '✅'}</span>
+        </a>
+        <a href="http://localhost:5001" target="_blank" class="mlflow-ui-btn">
+          <span>📊</span><span>MLflow UI</span>
+        </a>
       </div>
       <div class="search-wrapper">
         <div class="search-box">
