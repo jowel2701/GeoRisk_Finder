@@ -112,13 +112,41 @@ export function createHotspotLabels(hotspots: any[]): TextLayer | null {
     id: 'hotspots',
     data: hotspots,
     getPosition: (d: any) => [d.lon, d.lat],
-    getText: (d: any) => `${d.name}\n${(d.risk_score || 0).toFixed(2)}`,
-    getSize: 14,
-    getColor: [255, 255, 255, 220],
+    getText: (d: any) => `${d.region || d.name || 'Zona'}\nRiesgo: ${(d.risk_score || 0).toFixed(2)}`,
+    getSize: 13,
+    getColor: [255, 255, 200, 240],
     getTextAnchor: 'start',
     getAlignmentBaseline: 'bottom',
     background: true,
-    backgroundColor: [0, 0, 0, 150],
+    backgroundColor: [0, 0, 0, 160],
     padding: [4, 6],
+  });
+}
+
+export function createClusterCentroidLabels(
+  clusters: Record<number, any>,
+  palette: string[],
+): TextLayer | null {
+  const data = Object.entries(clusters).map(([id, c]) => ({
+    ...c,
+    clusterId: Number(id),
+    color: palette[Number(id) % palette.length],
+  }));
+  if (!data.length) return null;
+  return new TextLayer({
+    id: 'cluster-centroids',
+    data,
+    getPosition: (d: any) => [d.lon, d.lat],
+    getText: (d: any) => `Grupo ${d.clusterId}`,
+    getSize: 12,
+    getColor: (d: any) => {
+      const [r, g, b] = d.color;
+      return [r, g, b, 220];
+    },
+    getTextAnchor: 'middle',
+    getAlignmentBaseline: 'bottom',
+    background: true,
+    backgroundColor: [0, 0, 0, 120],
+    padding: [2, 4],
   });
 }

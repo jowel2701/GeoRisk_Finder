@@ -20,6 +20,15 @@ export interface FilterState {
   minOverlap: number;
 }
 
+export interface ClusterLabel {
+  business: string;
+  humanitarian: string;
+  eq: number;
+  cyc: number;
+  vol: number;
+  risk: number;
+}
+
 export interface AppState {
   // Deck
   deckInstance: any;
@@ -43,6 +52,7 @@ export interface AppState {
   searchQuery: string;
   searchResults: any[];
   clusterColoring: boolean;
+  clusterLabels: Record<number, ClusterLabel>;
 
   // Actions
   setDeckInstance: (d: any) => void;
@@ -61,6 +71,7 @@ export interface AppState {
   setSearchQuery: (q: string) => void;
   setSearchResults: (r: any[]) => void;
   setClusterColoring: (v: boolean) => void;
+  setClusterLabels: (l: Record<number, ClusterLabel>) => void;
   getFilteredLayers: () => any[];
 }
 
@@ -93,6 +104,7 @@ export const store = createStore<AppState>((set, get) => ({
   searchQuery: '',
   searchResults: [],
   clusterColoring: false,
+  clusterLabels: {},
 
   setDeckInstance: (d) => set({ deckInstance: d }),
   setViewState: (vs) => set({ viewState: vs }),
@@ -110,6 +122,7 @@ export const store = createStore<AppState>((set, get) => ({
   setSearchQuery: (q) => set({ searchQuery: q }),
   setSearchResults: (r) => set({ searchResults: r }),
   setClusterColoring: (v) => set({ clusterColoring: v }),
+  setClusterLabels: (l) => set({ clusterLabels: l }),
   getFilteredLayers: () => {
     const s = get();
     return s.rawLayers.filter((l: any) => s.filters.activeTypes.includes(l.id));
