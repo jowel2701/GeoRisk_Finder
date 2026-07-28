@@ -17,6 +17,7 @@ notebooks/.ipynb_checkpoints/
 models/
 *.html
 !georisk_globe/frontend/index.html
+!frontend/index.html
 profiling_reports/
 streamlit_*.log
 _check_*.py
@@ -24,3 +25,5 @@ mlflow.db
 mlruns/
 mlartifacts/
 *.sqlite
+frontend/node_modules/
+frontend/dist/

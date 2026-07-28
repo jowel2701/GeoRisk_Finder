@@ -222,6 +222,8 @@ function renderIntel() {
     `;
   } else if (lid === 'h3') {
     const rs = o.risk_score || 0;
+    const kmeans = o.kmeans_cluster;
+    const dbscan = o.dbscan_label;
     html += `
       <div class="intel-score">
         <div class="intel-score-value" style="color:hsl(${Math.round((1 - rs) * 120)}, 80%, 55%)">${rs.toFixed(3)}</div>
@@ -229,7 +231,8 @@ function renderIntel() {
       </div>
       <div class="intel-section">H3 Cell</div>
       <div class="intel-row"><span class="intel-lbl">Index</span><span class="intel-val">${o.h3_index || o.cell_id || '-'}</span></div>
-      <div class="intel-row"><span class="intel-lbl">Cluster</span><span class="intel-val">Pendiente de modelado</span></div>
+      <div class="intel-row"><span class="intel-lbl">K-Means</span><span class="intel-val">${kmeans !== undefined && kmeans !== null ? 'Cluster ' + kmeans : '-'}</span></div>
+      <div class="intel-row"><span class="intel-lbl">DBSCAN</span><span class="intel-val">${dbscan !== undefined && dbscan !== null ? (dbscan === -1 ? 'Noise (atípico)' : 'Cluster ' + dbscan) : '-'}</span></div>
       <div class="intel-row"><span class="intel-lbl">Latitude</span><span class="intel-val">${o.lat?.toFixed(2) || '-'}</span></div>
       <div class="intel-row"><span class="intel-lbl">Longitude</span><span class="intel-val">${o.lon?.toFixed(2) || '-'}</span></div>
       <div class="intel-section">Factors</div>
