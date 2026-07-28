@@ -214,6 +214,8 @@ let rawDataCache: Record<string, any[]> = {};
 let landPolysCache: any[] = [];
 let totalRealEvents: { eq: number; cyc: number; vol: number; total: number } = { eq: 0, cyc: 0, vol: 0, total: 0 };
 
+const EVENT_LAYERS = new Set(['earthquakes', 'cyclones', 'volcanoes']);
+
 function updateFilteredLayers() {
   const filters = store.getState().filters;
   const rawLayers = store.getState().rawLayers;
@@ -508,37 +510,7 @@ function renderTopbar() {
   const mlflowExperiment = "georisk_modelado";
   topbarEl.innerHTML = `
     <div class="topbar-inner">
-      <div class="logo-container">
-        <div class="logo-svg-wrapper">
-          <div class="logo-svg">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 896 268">
-              <rect id="geo-bg" width="896" height="268" fill="#061533" style="opacity: 0;" />
-              <circle id="geo-circle-1" cx="125" cy="126" r="63" fill="none" stroke="#2f436d" stroke-width="4" stroke-dasharray="8 8"/>
-              <line id="geo-line-1" x1="90" y1="98" x2="153" y2="90" stroke="#dfe7f7" stroke-width="5" stroke-linecap="round"/>
-              <line id="geo-line-2" x1="90" y1="98" x2="105" y2="165" stroke="#dfe7f7" stroke-width="5" stroke-linecap="round"/>
-              <line id="geo-line-3" x1="153" y1="90" x2="160" y2="155" stroke="#dfe7f7" stroke-width="5" stroke-linecap="round"/>
-              <line id="geo-line-4" x1="105" y1="165" x2="160" y2="155" stroke="#dfe7f7" stroke-width="5" stroke-linecap="round"/>
-              <circle id="geo-node-1" cx="90" cy="98" r="14" fill="#16c38a"/>
-              <circle id="geo-node-2" cx="153" cy="90" r="14" fill="#18b8e8"/>
-              <circle id="geo-node-3" cx="105" cy="165" r="14" fill="#16c38a"/>
-              <circle id="geo-node-4" cx="160" cy="155" r="20" fill="#ff5b5f"/>
-              <text id="geo-text-geo" x="255" y="140" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="700" fill="#f3f3f3" text-anchor="start" dominant-baseline="middle">GeoRisk</text>
-              <text id="geo-text-find" x="575" y="140" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="400" text-anchor="start" dominant-baseline="middle">FINDER</text>
-            </svg>
-          </div>
-        </div>
-        <div class="app-title">Finder</div>
-      </div>
-      <div class="mlflow-status-container">
-        <a href="http://localhost:5001" target="_blank" class="mlflow-badge ${!st.mlflowEnabled ? 'disabled' : 'active'}">
-          <span class="mlflow-icon">🧠</span>
-          <span class="mlflow-text">MLflow: ${mlflowExperiment}</span>
-          <span class="mlflow-status ${!st.mlflowEnabled ? 'off' : 'on'}">${!st.mlflowEnabled ? '⏸️' : '✅'}</span>
-        </a>
-        <a href="http://localhost:5001" target="_blank" class="mlflow-ui-btn">
-          <span>📊</span><span>MLflow UI</span>
-        </a>
-      </div>
+      <div class="logo">GeoRisk Finder</div>
       <div class="search-wrapper">
         <div class="search-box">
           <input type="text" id="search-input" placeholder="Buscar ciudad, región..." value="${st.searchQuery}" autocomplete="off" />
@@ -868,6 +840,32 @@ function render() {
   const st = s();
   if (!st.loading && loadingOverlay) {
     loadingOverlay.style.display = 'none';
+  }
+  if (!st.loading && !document.getElementById('cover-screen')) {
+    const cover = document.createElement('div');
+    cover.id = 'cover-screen';
+    cover.innerHTML = `
+      <div id="cover-svg">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 896 268">
+          <rect width="896" height="268" fill="#061533"/>
+          <circle cx="125" cy="126" r="63" fill="none" stroke="#2f436d" stroke-width="4" stroke-dasharray="8 8" style="animation:scene1 0.4s ease-out forwards"/>
+          <line x1="90" y1="98" x2="153" y2="90" stroke="#dfe7f7" stroke-width="5" stroke-linecap="round" style="animation:drawLine 400ms ease-out 1.1s forwards;stroke-dasharray:500;stroke-dashoffset:500"/>
+          <line x1="90" y1="98" x2="105" y2="165" stroke="#dfe7f7" stroke-width="5" stroke-linecap="round" style="animation:drawLine 400ms ease-out 1.1s forwards;stroke-dasharray:500;stroke-dashoffset:500"/>
+          <line x1="153" y1="90" x2="160" y2="155" stroke="#dfe7f7" stroke-width="5" stroke-linecap="round" style="animation:drawLine 400ms ease-out 1.1s forwards;stroke-dasharray:500;stroke-dashoffset:500"/>
+          <line x1="105" y1="165" x2="160" y2="155" stroke="#dfe7f7" stroke-width="5" stroke-linecap="round" style="animation:drawLine 400ms ease-out 1.1s forwards;stroke-dasharray:500;stroke-dashoffset:500"/>
+          <circle cx="90" cy="98" r="14" fill="#16c38a" style="animation:nodeAppear 150ms ease-out 0.4s forwards;opacity:0;transform:scale(0.8)"/>
+          <circle cx="153" cy="90" r="14" fill="#18b8e8" style="animation:nodeAppear 150ms ease-out 0.55s forwards;opacity:0;transform:scale(0.8)"/>
+          <circle cx="105" cy="165" r="14" fill="#16c38a" style="animation:nodeAppear 150ms ease-out 0.7s forwards;opacity:0;transform:scale(0.8)"/>
+          <circle cx="160" cy="155" r="20" fill="#ff5b5f" style="animation:nodeAppear 150ms ease-out 0.85s forwards;opacity:0;transform:scale(0.8)"/>
+          <text x="255" y="140" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="700" fill="#f3f3f3" text-anchor="start" dominant-baseline="middle" style="animation:revealGeoRisk 300ms ease-out 1.8s forwards;opacity:0">GeoRisk</text>
+          <text x="575" y="140" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="400" text-anchor="start" dominant-baseline="middle" style="animation:revealFinder 300ms ease-out 2.4s forwards;opacity:0;clip-path:inset(0 100% 0 0)">FINDER</text>
+        </svg>
+      </div>
+    `;
+    cover.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#061533;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity 0.8s ease;pointer-events:none';
+    document.getElementById('app')?.appendChild(cover);
+    setTimeout(() => { cover.classList.add('hidden'); }, 3500);
+    setTimeout(() => { cover.remove(); }, 4500);
   }
   renderTopbar();
   renderSidebar();
