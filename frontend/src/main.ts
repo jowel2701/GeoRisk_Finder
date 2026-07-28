@@ -79,6 +79,102 @@ style.textContent = `
   .logo-container:hover {
     transform: scale(1.05);
   }
+
+  /* MLflow dashboard status */
+  .mlflow-status-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    z-index: 1000;
+  }
+  
+  .mlflow-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    color: white;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+  }
+  
+  .mlflow-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+    background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%);
+    text-decoration: none;
+  }
+  
+  .mlflow-badge.disabled {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  }
+  
+  .mlflow-badge.active {
+    animation: mlflow-pulse 2s infinite;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .mlflow-icon {
+    font-size: 12px;
+  }
+  
+  .mlflow-text {
+    white-space: nowrap;
+  }
+  
+  .mlflow-status {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 500;
+  }
+  
+  .mlflow-on {
+    color: #10b981;
+  }
+  
+  .mlflow-off {
+    color: #6b7280;
+  }
+  
+  .mlflow-ui-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .mlflow-ui-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+  }
+  
+  @keyframes mlflow-pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(220, 38, 38, 0);
+    }
+  }
 `;
 document.head.appendChild(style);
 
@@ -408,6 +504,8 @@ function renderTopbar() {
   const st = s();
   const visible = computeVisibleCount();
   const total = totalRealEvents;
+  const mlflowActive = !document.querySelector('.mlflow-badge.disabled');
+  const mlflowExperiment = "georisk_modelado";
   topbarEl.innerHTML = `
     <div class="topbar-inner">
       <div class="logo-container">
