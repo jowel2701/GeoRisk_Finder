@@ -40,6 +40,9 @@ canvas{display:block}
 .filter-slider{flex:1;height:4px;cursor:pointer;accent-color:#00D4FF}
 .filter-val{min-width:36px;text-align:right;color:#f8fafc;font-weight:500}
 
+.toggle-row{display:flex;align-items:center;gap:8px;font-size:12px;color:#c8d0dc;cursor:pointer;padding:2px 0}
+.toggle-row input[type=checkbox]{accent-color:#00D4FF;cursor:pointer}
+.toggle-label{color:#8892A4}
 .legend-row{display:flex;align-items:center;gap:8px;font-size:11px;color:#8892A4;padding:2px 0}
 .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 

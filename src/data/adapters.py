@@ -84,6 +84,24 @@ def _risk_color(risk: float) -> list:
     return [239, 68, 68, 220]
 
 
+_CLUSTER_PALETTE = [
+    [59, 130, 246, 180],
+    [239, 68, 68, 180],
+    [16, 185, 129, 180],
+    [245, 158, 11, 180],
+    [139, 92, 246, 180],
+    [236, 72, 153, 180],
+    [34, 211, 238, 180],
+    [251, 146, 60, 180],
+    [132, 204, 22, 180],
+    [168, 85, 247, 180],
+]
+
+
+def _cluster_color(cluster_id: int) -> list:
+    return _CLUSTER_PALETTE[cluster_id % len(_CLUSTER_PALETTE)]
+
+
 def _magnitude_color(mag: float) -> list:
     if mag < 4:
         return [16, 185, 129, 180]
@@ -228,8 +246,9 @@ class DataAdapters:
 
         df = self._compute_risk_and_pc1(df)
         df = self._compute_clusters(df)
-        df["elevation"] = (df["risk_score"] * 100).astype(int)
+        df["elevation"] = 0
         df["color"] = df["risk_score"].apply(_risk_color)
+        df["cluster_color"] = df["kmeans_cluster"].apply(_cluster_color)
         df["h3_index"] = df["cell_id"]
         df["n_earthquakes"] = df["eq_count"].fillna(0).astype(int)
         df["n_cyclones"] = df["cyclone_count"].fillna(0).astype(int)

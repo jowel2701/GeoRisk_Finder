@@ -2,6 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 
 import h3
+import requests
 from fastapi import FastAPI, Query
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -37,6 +38,25 @@ def _graticule_data():
         pts = [[lon, lat] for lat in range(-90, 91, 5)]
         lines.append({"path": pts})
     return lines
+
+
+_PLATES_URL = "https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json"
+
+
+@lru_cache(maxsize=1)
+def _fetch_plate_boundaries():
+    r = requests.get(_PLATES_URL, timeout=10)
+    r.raise_for_status()
+    gj = r.json()
+    paths = []
+    for feat in gj["features"]:
+        geom = feat["geometry"]
+        if geom["type"] == "MultiLineString":
+            for seg in geom["coordinates"]:
+                paths.append({"path": [[c[0], c[1]] for c in seg]})
+        elif geom["type"] == "LineString":
+            paths.append({"path": [[c[0], c[1]] for c in geom["coordinates"]]})
+    return paths
 
 
 def _add_position(records):
@@ -96,16 +116,16 @@ def serialize_active_layers():
             "data": _add_position(heat_df.to_dict(orient="records")), "pickable": False,
             "props": {"getPosition": "position", "getWeight": "risk_score", "aggregation": "MEAN", "radiusPixels": 25, "intensity": 1, "threshold": 0.05, "opacity": 0.35},
         })
-    plates_data = [
-        {"source": [-80, -20], "target": [-60, 10]},
-        {"source": [-60, 10], "target": [-100, 30]},
-        {"source": [-100, 30], "target": [-80, -20]},
-    ]
-    layers.append({
-        "id": "plates", "type": "LineLayer",
-        "data": plates_data, "pickable": False,
-        "props": {"getSourcePosition": "source", "getTargetPosition": "target", "getColor": [42, 53, 80, 120], "getWidth": 1, "widthMinPixels": 0.5, "opacity": 0.3},
-    })
+    try:
+        plates_data = _fetch_plate_boundaries()
+    except Exception:
+        plates_data = []
+    if plates_data:
+        layers.append({
+            "id": "plates", "type": "PathLayer",
+            "data": plates_data, "pickable": False,
+            "props": {"getPath": "path", "getColor": [42, 53, 80, 120], "getWidth": 1, "widthMinPixels": 0.5, "opacity": 0.3},
+        })
     return {"layers": layers, "view_state": {"latitude": 15, "longitude": 0, "zoom": 1.5, "pitch": 0, "bearing": 0}}
 
 

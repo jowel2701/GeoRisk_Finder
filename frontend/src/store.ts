@@ -42,6 +42,7 @@ export interface AppState {
   timelineYear: number;
   searchQuery: string;
   searchResults: any[];
+  clusterColoring: boolean;
 
   // Actions
   setDeckInstance: (d: any) => void;
@@ -59,6 +60,7 @@ export interface AppState {
   setTimelineYear: (y: number) => void;
   setSearchQuery: (q: string) => void;
   setSearchResults: (r: any[]) => void;
+  setClusterColoring: (v: boolean) => void;
   getFilteredLayers: () => any[];
 }
 
@@ -90,6 +92,7 @@ export const store = createStore<AppState>((set, get) => ({
   timelineYear: 2026,
   searchQuery: '',
   searchResults: [],
+  clusterColoring: false,
 
   setDeckInstance: (d) => set({ deckInstance: d }),
   setViewState: (vs) => set({ viewState: vs }),
@@ -106,6 +109,7 @@ export const store = createStore<AppState>((set, get) => ({
   setTimelineYear: (y) => set({ timelineYear: y }),
   setSearchQuery: (q) => set({ searchQuery: q }),
   setSearchResults: (r) => set({ searchResults: r }),
+  setClusterColoring: (v) => set({ clusterColoring: v }),
   getFilteredLayers: () => {
     const s = get();
     return s.rawLayers.filter((l: any) => s.filters.activeTypes.includes(l.id));

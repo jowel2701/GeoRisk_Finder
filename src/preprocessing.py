@@ -137,6 +137,7 @@ def preprocessing_pca_pipeline(
     df_raw: pd.DataFrame,
     target_variance: float = EXPLAINED_VARIANCE_THRESHOLD,
     save_path: str | None = os.path.join(MODELS_DIR, "pipeline_riesgo.joblib"),
+    run_clustering: bool = True,
 ) -> tuple:
     setup_mlflow()
     source = "real" if df_raw.shape[0] > 5000 else "test"
@@ -268,6 +269,13 @@ def preprocessing_pca_pipeline(
             os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
             joblib.dump(pipeline, save_path, compress=3)
             mlflow.log_artifact(save_path)
+
+    if run_clustering:
+        try:
+            from src.train_clustering import train_clustering_pipeline
+            train_clustering_pipeline(df_raw, pca_pipeline=pipeline, nested=True)
+        except Exception:
+            pass
 
     return df_pca, pipeline, df_scaled
 

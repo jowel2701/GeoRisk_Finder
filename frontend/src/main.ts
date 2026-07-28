@@ -37,7 +37,7 @@ store.getState().setDeckInstance(deck);
 
 let rawDataCache: Record<string, any[]> = {};
 let landPolysCache: any[] = [];
-let totalRealEvents = 0;
+let totalRealEvents: { eq: number; cyc: number; vol: number; total: number } = { eq: 0, cyc: 0, vol: 0, total: 0 };
 
 function updateFilteredLayers() {
   const filters = store.getState().filters;
@@ -49,6 +49,9 @@ function updateFilteredLayers() {
 
     if (desc.id === 'h3') {
       filteredData = rawData.filter((d: any) => d.risk_score >= filters.minRisk);
+      if (store.getState().clusterColoring) {
+        filteredData = filteredData.map((d: any) => ({ ...d, color: d.cluster_color || d.color }));
+      }
     } else if (desc.id === 'earthquakes') {
       filteredData = rawData.filter((d: any) =>
         (d.magnitude ?? 0) >= filters.minMagnitude &&
@@ -77,23 +80,28 @@ function updateFilteredLayers() {
   deck.setProps({ layers: allLayers });
 }
 
+const EVENT_LAYERS = new Set(['earthquakes', 'cyclones', 'volcanoes']);
+
 function computeVisibleCount(): number {
   const layers = (deck.props.layers || []) as any[];
-  let count = 0;
+  let eq = 0, cyc = 0, vol = 0;
   for (const l of layers) {
-    if (!l || l.id === 'land' || l.id === 'risk-heatmap' || l.id === 'graticule' || l.id === 'plates') continue;
-    count += l.props?.data?.length || 0;
+    if (!l) continue;
+    if (l.id === 'earthquakes') eq = l.props?.data?.length || 0;
+    if (l.id === 'cyclones') cyc = l.props?.data?.length || 0;
+    if (l.id === 'volcanoes') vol = l.props?.data?.length || 0;
   }
-  return count;
+  return { eq, cyc, vol, total: eq + cyc + vol };
 }
 
 function computeFilteredCount(): number {
-  let count = 0;
+  let eq = 0, cyc = 0, vol = 0;
   for (const [id, data] of Object.entries(rawDataCache)) {
-    if (id === 'graticule' || id === 'plates') continue;
-    count += (data as any[]).length;
+    if (id === 'earthquakes') eq = (data as any[]).length;
+    if (id === 'cyclones') cyc = (data as any[]).length;
+    if (id === 'volcanoes') vol = (data as any[]).length;
   }
-  return count;
+  return { eq, cyc, vol, total: eq + cyc + vol };
 }
 
 async function loadData() {
@@ -106,7 +114,7 @@ async function loadData() {
     for (const layer of res.layers) {
       rawDataCache[layer.id] = layer.data;
     }
-    totalRealEvents = computeFilteredCount();
+    totalRealEvents = computeFilteredCount() as any;
     store.getState().setRawLayers(res.layers);
     updateFilteredLayers();
     if (res.view_state) {
@@ -151,7 +159,10 @@ function renderTopbar() {
         <button id="search-btn">&#x1F50D;</button>
       </div>
       <div class="topbar-stats">
-        <span>${visible.toLocaleString()} / ${total.toLocaleString()} events</span>
+        <span>${visible.total.toLocaleString()} / ${total.total.toLocaleString()} events</span>
+        <span title="Earthquakes">EQ ${visible.eq.toLocaleString()}</span>
+        <span title="Cyclones">CYC ${visible.cyc.toLocaleString()}</span>
+        <span title="Volcanoes">VOL ${visible.vol.toLocaleString()}</span>
       </div>
     </div>
   `;
@@ -253,12 +264,14 @@ function renderIntel() {
 
 function renderTimeline() {
   const st = s();
+  const yearRange = st.timelineYear - 2000;
+  const pct = Math.round((yearRange / 26) * 100);
   timelineEl.innerHTML = `
     <div class="timeline-inner">
       <span class="timeline-label">Timeline</span>
       <input type="range" class="timeline-slider" min="2000" max="2026" value="${st.timelineYear}" step="1" />
       <span class="timeline-year">${st.timelineYear}</span>
-      <span class="timeline-badge">Proximamente</span>
+      <span class="timeline-badge">${pct}% of period</span>
     </div>
   `;
   timelineEl.querySelector('.timeline-slider')?.addEventListener('input', (e: any) => {
@@ -325,10 +338,21 @@ function renderSidebar() {
       </div>
     </div>
     <div class="sidebar-section">
+      <div class="sidebar-section-title">Display</div>
+      <label class="toggle-row"><input type="checkbox" id="cluster-toggle" ${st.clusterColoring ? 'checked' : ''} /><span class="toggle-label">Color by cluster</span></label>
+    </div>
+    <div class="sidebar-section">
       <div class="sidebar-section-title">Legend</div>
-      <div class="legend-row"><span class="legend-dot" style="background:#10B981"></span>Low risk</div>
-      <div class="legend-row"><span class="legend-dot" style="background:#F59E0B"></span>Medium risk</div>
-      <div class="legend-row"><span class="legend-dot" style="background:#EF4444"></span>High risk</div>
+      ${st.clusterColoring
+        ? `<div class="legend-row"><span class="legend-dot" style="background:#3B82F6"></span>Cluster 0</div>
+           <div class="legend-row"><span class="legend-dot" style="background:#EF4444"></span>Cluster 1</div>
+           <div class="legend-row"><span class="legend-dot" style="background:#10B981"></span>Cluster 2</div>
+           <div class="legend-row"><span class="legend-dot" style="background:#F59E0B"></span>Cluster 3</div>
+           <div class="legend-row"><span class="legend-dot" style="background:#8B5CF6"></span>Cluster 4+</div>`
+        : `<div class="legend-row"><span class="legend-dot" style="background:#10B981"></span>Low risk</div>
+           <div class="legend-row"><span class="legend-dot" style="background:#F59E0B"></span>Medium risk</div>
+           <div class="legend-row"><span class="legend-dot" style="background:#EF4444"></span>High risk</div>`
+      }
     </div>
   `;
   document.getElementById('sidebar-close')?.addEventListener('click', () => {
@@ -340,6 +364,13 @@ function renderSidebar() {
       updateFilteredLayers();
     });
   });
+  const clusterToggle = document.getElementById('cluster-toggle');
+  if (clusterToggle) {
+    clusterToggle.addEventListener('change', (e: any) => {
+      store.getState().setClusterColoring(e.target.checked);
+      updateFilteredLayers();
+    });
+  }
   sidebarEl.querySelectorAll('.ranking-item').forEach((el: any) => {
     el.addEventListener('click', () => {
       const idx = parseInt(el.dataset.index);
