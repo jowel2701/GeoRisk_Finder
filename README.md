@@ -1,6 +1,8 @@
 # GeoRisk Finder 🌍
 > **Plataforma de Inteligencia Geoespacial para la Evaluación de Riesgos Compuestos y Decisiones de Inversión en Resiliencia Climática**
 
+![GeoRisk Finder Banner](streamlit_app/assets/banner_georisk.png)
+
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg?style=flat&logo=python)
 ![Scikit-Learn](https://img.shields.io/badge/Machine_Learning-Scikit--Learn-F7931E?style=flat&logo=scikit-learn)
 ![Streamlit](https://img.shields.io/badge/Dashboard-Streamlit-FF4B4B?style=flat&logo=streamlit)
@@ -37,17 +39,104 @@ Las catástrofes naturales generan pérdidas globales superiores a los **$300.00
 
 ## 🏗️ Arquitectura del Sistema
 
+### Flujo de Datos & Ejecución
 ```text
-                               DATA PIPELINE & ARCHITECTURE
-                               
-[ Fuentes de Datos ]          [ Grid Espacial H3 ]          [ Machine Learning ]         [ Capa de Producto ]
- ├── USGS (Sismos)     ──┐                                   ├── Log1p Transformer ──┐
- ├── IBTrACS (Ciclones)──┼──> [ Aggregator H3 Res 3 ] ──>  ├── StandardScaler    ──┼──> [ Dashboard Streamlit ]
- ├── NOAA (Volcanes)   ──┤     (~12,588 celdas globales)     ├── PCA (6 PCs, 85% Var)──┤     (KPIs + Modelo Financiero)
- └── IGN (Regional)    ──┘                                   └── K-Means + DBSCAN  ──┘    [ Demo Globo 3D ]
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                           GEORISK FINDER - END-TO-END PIPELINE                                   │
+└─────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  [ FUENTES EXTERNAS ]          [ INGESTA & LIMPIEZA ]          [ GRID H3 & FEATURES ]         [ ML & CLUSTERING ]         [ PRODUCTO ]
+  ───────────────────          ─────────────────────────        ───────────────────────        ─────────────────────        ──────────
+  ┌──────────────┐             ┌────────────────────┐           ┌────────────────────┐          ┌─────────────────┐         ┌────────────┐
+  │ USGS API     │────────────▶│ src/usgs_          │──────────▶│ src/features/      │─────────▶│ src/prepro-     │────────▶│ streamlit_ │
+  │ (Sismos M≥4.5│             │ earthquakes.py     │  raw CSV  │ grid.py            │  grid_   │ cessing.py      │  model  │ app/       │
+  │  1900-2026)  │             │ 01_eda_sismos.ipynb│           │ engineering.py     │ features │ 04_preprocesa-  │         │ (Dashboard │
+  └──────────────┘             └────────────────────┘           │ 03_grid_y_featu-   │ .csv     │ miento_pca.ipynb│         │ Financiero)│
+        │                                                      │ res.ipynb          │          │ src/clustering. │         └────────────┘
+        │                                                      └────────────────────┘          │ py              │               │
+        │                                                                     │               └─────────────────┘               │
+  ┌──────────────┐             ┌────────────────────┐                │                     │               │
+  │ IBTrACS      │────────────▶│ 02_eda_ciclones_   │────────────────┘                     │               ▼
+  │ (Ciclones    │             │ volcanes.ipynb     │                                  ┌─────────────────┐         ┌────────────┐
+  │  1970-2025)  │             │ src/features/      │                                  │ MLflow Tracking │         │ georisk_   │
+  └──────────────┘             │ ingestion.py       │                                  │ (Experimentos,  │         │ globe/     │
+        │                      └────────────────────┘                                  │  Métricas,      │         │ (Demo 3D   │
+        │                                                                               │  Artefactos,    │         │  Interact.)│
+  ┌──────────────┐             ┌────────────────────┐           ┌────────────────────┐  │  Model Registry)│         └────────────┘
+  │ NOAA/NCEI    │────────────▶│ (Volcanes, IGN)    │──────────▶│ src/h3_aggregator. │◀─┘                 │
+  │ (Volcanes    │             │                    │           │ py (merge multi-   │                    │
+  │  Históricos) │             └────────────────────┘           │ hazard por H3)   │                    │
+  └──────────────┘                                              └────────────────────┘                    │
+                                                                                                      ▼
+                                                                                             ┌────────────┐
+                                                                                             │ outputs/   │
+                                                                                             │ figures/   │
+                                                                                             │ (PNG, HTML)│
+                                                                                             └────────────┘
 ```
 
-### 💡 Principales Hallazgos del Modelo
+### Estructura de Carpetas
+```text
+GeoRisk_Finder/
+├── data/
+│   ├── raw/                      # Datos originales (NO versionar >50MB)
+│   │   └── ibtracs_sample.csv
+│   └── processed/                # Datasets listos para modelado
+│       ├── usgs_earthquakes_clean.csv   # 79M filas
+│       ├── ciclones_clean.csv           # 46M filas
+│       ├── volcanes_clean.csv           # 7.5K filas
+│       ├── espana_clean.csv             # 11M filas (IGN)
+│       ├── grid_features.csv            # 4.5M celdas × 15 features
+│       ├── cluster_labels.csv           # Etiquetas K-Means + DBSCAN
+│       ├── interpretacion_clusters.csv  # Perfil riesgo por cluster
+│       └── casos_estudio.csv            # 10 casos validados geo
+├── notebooks/                    # 7 notebooks en orden de ejecución
+│   ├── 01_eda_sismos.ipynb           → Ingesta/EDA USGS (David)
+│   ├── 02_eda_ciclones_volcanes.ipynb → Ingesta/EDA IBTrACS/NOAA/IGN (Vanessa)
+│   ├── 03_grid_y_features.ipynb      → Grid H3 + Feature Engineering (Joel/Juan)
+│   ├── 04_preprocesamiento_pca.ipynb → Pipeline Preproc + PCA + joblib (Juan/Anas)
+│   ├── 05_modelado_clustering.ipynb  → K-Means + DBSCAN (María Isabel/Anas)
+│   ├── 06_evaluacion_estabilidad.ipynb → Bootstrap stability (Anas/Joel)
+│   └── 07_interpretacion_casos_estudio.ipynb → Labels semánticos + casos (María Isabel)
+├── src/                          # Código reutilizable (importado desde notebooks)
+│   ├── config.py                 # Config central (schema, PCA, H3)
+│   ├── data_loader.py            # Carga unificada + fallback sintético
+│   ├── usgs_earthquakes.py       # Ingesta completa USGS (API, yearly, dedup)
+│   ├── h3_aggregator.py          # Merge multi-hazard por H3 genérico
+│   ├── features/
+│   │   ├── grid.py               # Grid global H3 res=3 + asignación eventos→celdas
+│   │   ├── engineering.py        # Features sísmicas/ciclónicas/volcánicas por celda
+│   │   └── ingestion.py          # Carga fuentes externas normalizadas
+│   ├── preprocessing.py          # Pipeline sklearn: Log1p → OneHot → Scaler → PCA
+│   ├── clustering.py             # K-Means (elbow/silhouette) + DBSCAN (k-dist)
+│   └── visualization.py          # Gráficos pro: Matplotlib/Plotly/Folium
+├── streamlit_app/                # Dashboard financiero (7 páginas)
+│   ├── app.py
+│   ├── requirements.txt
+│   └── assets/
+│       ├── Modelo_Catastrofes_Alerta_Temprana.xlsx  # 6 hojas modelo financiero
+│       ├── Resumen_Ejecutivo_Catastrofes_EWS.pdf
+│       ├── Analisis_Sesgos_Modelo_Catastrofes.pdf
+│       └── banner_georisk.png
+├── georisk_globe/                # Demo 3D interactiva (Duo A - 2ª mitad)
+│   ├── message_sender/
+│   └── layer_panel/
+├── outputs/figures/              # Gráficos exportados para presentación
+├── tests/                        # Pytest suite (data, preproc, clustering, viz)
+└── requirements.txt
+```
+
+### MLflow Tracking
+```bash
+# Iniciar servidor MLflow (opcional, para tracking de experimentos)
+mlflow ui --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlruns
+
+# Los notebooks 04, 05, 06 logean automáticamente:
+#   - Parámetros (K, eps, n_components, threshold varianza)
+#   - Métricas (inertia, silhouette, Jaccard bootstrap, ARI)
+#   - Artefactos (pipeline_riesgo.joblib, figuras PCA, cluster maps)
+#   - Modelos registrados (KMeans, DBSCAN, Pipeline completo)
+```
 
 * El **12% de las celdas globales** analizadas concentran el **70% del impacto financiero acumulado** por catástrofes.
 * **Clusters de Riesgo Compuesto:** Se identificaron 4 perfiles claros de riesgo, destacando zonas críticas donde la recurrencia ciclónica amplifica el daño sísmico latente.
