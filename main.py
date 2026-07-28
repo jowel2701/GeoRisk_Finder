@@ -22,7 +22,7 @@ def warmup_cache():
     import logging
     logging.info("Warming up DataAdapters cache...")
     adapters = _get_adapters()
-    adapters.load_h3()
+    adapters.load_h3(force_preprocess=False)
     adapters.load_earthquakes()
     adapters.load_cyclones()
     adapters.load_volcanoes()
@@ -79,18 +79,17 @@ def serialize_active_layers():
         "data": _graticule_data(), "pickable": False,
         "props": {"getPath": "path", "getColor": [42, 53, 80, 50], "getWidth": 0.5, "widthMinPixels": 0.3, "opacity": 0.12},
     })
-    h3_records = h3_df.to_dict(orient="records")
-    for rec in h3_records:
-        idx = rec["h3_index"]
-        try:
-            boundary = h3.cell_to_boundary(idx)
-            rec["polygon"] = [[lon, lat] for lat, lon in boundary]
-        except Exception:
-            rec["polygon"] = []
+    h3_safe_cols = [
+        "cell_id", "lat", "lon", "risk_score", "pc1",
+        "kmeans_cluster", "dbscan_label",
+        "elevation", "color", "cluster_color", "h3_index",
+        "n_earthquakes", "n_cyclones", "n_volcanoes", "year",
+    ]
+    h3_records = h3_df[[c for c in h3_safe_cols if c in h3_df.columns]].to_dict(orient="records")
     layers.append({
-        "id": "h3", "type": "PolygonLayer",
+        "id": "h3", "type": "H3HexagonLayer",
         "data": h3_records, "pickable": True,
-        "props": {"getPolygon": "polygon", "getFillColor": "color", "getElevation": "elevation", "elevationScale": 1, "extruded": False, "opacity": 0.7, "autoHighlight": True, "highlightColor": [0, 212, 255, 80], "lineWidthMinPixels": 0.3, "getLineColor": [42, 53, 80, 100]},
+        "props": {"getHexagon": "h3_index", "getFillColor": "color", "getElevation": 0, "elevationScale": 0, "extruded": False, "opacity": 0.7, "autoHighlight": True, "highlightColor": [0, 212, 255, 80], "lineWidthMinPixels": 0.3, "getLineColor": [42, 53, 80, 100]},
     })
     if not quake_df.empty:
         layers.append({

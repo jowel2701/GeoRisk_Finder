@@ -36,7 +36,6 @@ from src.utils.mlflow_utils import (
     log_figures,
     log_model,
     safe_end_run,
-    setup_mlflow,
     start_pipeline_run,
 )
 
@@ -203,6 +202,11 @@ def silhouette_score_safe(X, labels):
 
 
 def run_clustering_full():
+    import mlflow
+    from src.config.mlflow_config import MLFLOW_EXPERIMENT_CLUSTERING, MLFLOW_TRACKING_URI
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+    mlflow.set_experiment(MLFLOW_EXPERIMENT_CLUSTERING)
+
     grid_path = DATA_DIR / "grid_features.csv"
     if not grid_path.exists():
         print(f"File not found: {grid_path}")
