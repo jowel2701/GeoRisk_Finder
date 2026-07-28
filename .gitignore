@@ -2,6 +2,7 @@ data/raw/*
 !data/raw/.gitkeep
 data/processed/*.csv
 data/processed/*.parquet
+data/processed/h3_cache.pkl
 !data/processed/.gitkeep
 .ipynb_checkpoints/
 __pycache__/
