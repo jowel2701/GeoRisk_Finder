@@ -65,7 +65,14 @@ def _add_position(records):
     return records
 
 
+_layers_cache: dict | None = None
+
+
 def serialize_active_layers():
+    global _layers_cache
+    if _layers_cache is not None:
+        return _layers_cache
+
     adapters = _get_adapters()
     h3_df = adapters.load_h3()
     quake_df = adapters.load_earthquakes()
@@ -125,7 +132,8 @@ def serialize_active_layers():
             "data": plates_data, "pickable": False,
             "props": {"getPath": "path", "getColor": [42, 53, 80, 120], "getWidth": 1, "widthMinPixels": 0.5, "opacity": 0.3},
         })
-    return {"layers": layers, "view_state": {"latitude": 15, "longitude": 0, "zoom": 1.5, "pitch": 0, "bearing": 0}}
+    _layers_cache = {"layers": layers, "view_state": {"latitude": 15, "longitude": 0, "zoom": 1.5, "pitch": 0, "bearing": 0}}
+    return _layers_cache
 
 
 @app.get("/api/layers")
@@ -133,10 +141,17 @@ def get_layers():
     return serialize_active_layers()
 
 
+_ranking_cache: dict[int, list] = {}
+
+
 @app.get("/api/ranking")
 def get_ranking(limit: int = Query(10, ge=1, le=100)):
+    if limit in _ranking_cache:
+        return _ranking_cache[limit]
     adapters = _get_adapters()
-    return adapters.load_ranking(limit=limit)
+    result = adapters.load_ranking(limit=limit)
+    _ranking_cache[limit] = result
+    return result
 
 
 @app.get("/api/search")

@@ -348,15 +348,15 @@ class DataAdapters:
     def search(self, query: str) -> dict | None:
         cities = {
             "madrid": {"lat": 40.4168, "lon": -3.7038, "zoom": 6},
-            "tokyo": {"lat": 35.6762, "lon": 139.6503, "zoom": 5},
-            "chile": {"lat": -35.6751, "lon": -71.543, "zoom": 4},
+            "tokio": {"lat": 35.6762, "lon": 139.6503, "zoom": 5},
+            "japon": {"lat": 36.2048, "lon": 138.2529, "zoom": 4},
+            "chile": {"lat": -33.4489, "lon": -70.6693, "zoom": 4},
             "indonesia": {"lat": -0.7893, "lon": 113.9213, "zoom": 4},
             "california": {"lat": 36.7783, "lon": -119.4179, "zoom": 5},
             "valencia": {"lat": 39.4699, "lon": -0.3763, "zoom": 7},
-            "japan": {"lat": 36.2048, "lon": 138.2529, "zoom": 4},
-            "venezuela": {"lat": 6.4238, "lon": -66.5897, "zoom": 5},
+            "venezuela": {"lat": 6.4238, "lon": -66.9036, "zoom": 5},
             "espana": {"lat": 40.4637, "lon": -3.7492, "zoom": 4},
-            "canary": {"lat": 28.2916, "lon": -16.6291, "zoom": 6},
+            "canarias": {"lat": 28.2916, "lon": -16.6291, "zoom": 6},
             "manila": {"lat": 14.5995, "lon": 120.9842, "zoom": 7},
             "yakarta": {"lat": -6.2088, "lon": 106.8456, "zoom": 7},
             "katmandu": {"lat": 27.7172, "lon": 85.3240, "zoom": 7},
@@ -368,6 +368,11 @@ class DataAdapters:
             "lima": {"lat": -12.0464, "lon": -77.0428, "zoom": 7},
             "bogota": {"lat": 4.7110, "lon": -74.0721, "zoom": 7},
             "port-au-prince": {"lat": 18.5944, "lon": -72.3074, "zoom": 7},
+            "mexico": {"lat": 19.4326, "lon": -99.1332, "zoom": 6},
+            "colombia": {"lat": 4.5709, "lon": -74.2073, "zoom": 6},
+            "peru": {"lat": -12.0464, "lon": -77.0428, "zoom": 6},
+            "filipinas": {"lat": 12.8797, "lon": 121.774, "zoom": 7},
+            "nepal": {"lat": 27.7172, "lon": 85.324, "zoom": 7},
         }
         q = query.lower().strip()
         if q in cities:
