@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<style>
+body{margin:0;padding:0;width:0;height:0;background:transparent;overflow:hidden}
+</style>
+</head>
+<body>
+<script>
+(function() {
+  console.log("[Sender] component loaded");
+
+  function forwardToGlobe(data) {
+    console.log("[Sender] forwardToGlobe called");
+    var pendingData = data;
+    var maxAttempts = 30;
+    var attempt = 0;
+
+    function trySend() {
+      attempt++;
+      var iframe = window.parent.document.getElementById('georisk-globe-iframe');
+      if (!iframe) {
+        if (attempt < maxAttempts) { setTimeout(trySend, 500); }
+        return;
+      }
+      if (!iframe.contentWindow) {
+        if (attempt < maxAttempts) { setTimeout(trySend, 500); }
+        return;
+      }
+      console.log("[Sender] attempt " + attempt + ": sending postMessage");
+      iframe.contentWindow.postMessage(
+        {type: 'georisk_layers', layers: pendingData.layers},
+        '*'
+      );
+      iframe.contentWindow.postMessage(
+        {type: 'georisk_viewstate', view_state: pendingData.view_state},
+        '*'
+      );
+      console.log("[Sender] postMessage sent (attempt " + attempt + ")");
+      if (attempt < maxAttempts) {
+        setTimeout(trySend, 500);
+      }
+    }
+    trySend();
+  }
+
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'streamlit:render' && e.data.args) {
+      var args = e.data.args;
+      if (args.layers) {
+        console.log("[Sender] layers:", args.layers.length);
+        console.log("[Sender] bytes:", JSON.stringify(args.layers).length);
+      }
+      if (args.view_state) {
+        console.log("[Sender] view_state received");
+      }
+      forwardToGlobe(args);
+    }
+  });
+
+  window.parent.postMessage(
+    {type: 'streamlit:componentReady', apiVersion: 1, isStreamlitMessage: true},
+    '*'
+  );
+  console.log("[Sender] componentReady sent");
+})();
+</script>
+</body>
+</html>
