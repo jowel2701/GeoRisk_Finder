@@ -21,5 +21,6 @@ branca
 folium
 streamlit-folium>=0.27
 openpyxl
-geopandas 
+geopandas
 shapely
+mlflow
